@@ -72,7 +72,7 @@ de la commande *maven package*.
 
 La classe BookBenchmark contient les annotations generales du micro benchmark (et propres a JMH) on les trouve ici:
 
-```
+``` java
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Warmup(iterations = 3, time = 2)
@@ -87,7 +87,7 @@ Donc ce benchmark mesure la **latence** , chaque test sera constitue:
 
 Puis certaines methodes seront annotees en @Benchmark (ce sont les tests consituants notre benchmark) comme ici:
 
-```
+``` java
 /** 1 query for authors + 1 lazy query per author for its books (the classic N+1). */
     @Benchmark
     public int authorsWithBooksNPlusOne(JpaState s) {
@@ -115,7 +115,7 @@ Cette demo vise a  comparer diverses manieres de coder avec JPA et de quantifier
 
 Ainsi certaines methodes comparent l'impact du cache de niveau 1 (toujours active avec Hibernate) avec des codes faisant la meme chose mais sans passer par ce cache (20 requetes sur des ids seulement la derniere implementation va chercher le meme id 20 fois).
 
-```
+``` java
 /**
      * One session, same id looked up REPEATS times: the first lookup goes to the database,
      * the other 19 are served by the first-level cache.
@@ -134,7 +134,7 @@ Ainsi certaines methodes comparent l'impact du cache de niveau 1 (toujours activ
 
 D'autres tests montrent l'impact du cache de niveau 2 (L2) apporte ici par EhCache et sa configuration presentee ci-dessous:
 
-```
+```  xml
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://www.ehcache.org/v3"
@@ -160,7 +160,7 @@ Cette *region* EhCache permet de mettre en cache jusqu'a 10000 livres et de les 
 
 A noter une methode utitaire forcant ponctuellement l'entity manager JPA a ne pas utiliser le cache L2 :**emNoL2**
 
-```
+``` java
 /** EntityManager that neither reads from nor writes to the second-level cache. */
     public EntityManager emNoL2() {
         EntityManager em = emf.createEntityManager();
@@ -172,7 +172,7 @@ A noter une methode utitaire forcant ponctuellement l'entity manager JPA a ne pa
 Divers tests vont utiliser (ou pas) le cache L2 et cette methode s'assure que celui-ci soit bien desactive quand il y a lieu.
 C'est le cas ici par exemple:
 
-```
+``` java
  /** Regular managed entities: Hibernate keeps a snapshot per row and dirty-checks at commit. */
     @Benchmark
     public List<Book> entities(JpaState s) {
@@ -194,7 +194,7 @@ C'est le cas ici par exemple:
 Dans le cas de requetes de type *SELECT* il  est souvent preferable d'utiliser des *projections* ou *DTOs* a l'utilisation d'entites ceci evite des requetes de controle de coherence de l'etat de l'objet.
 Un exemple de cette strategie est la requete suivante renvoyant une liste de BookView et non d'entites Book.
 
-```
+``` java
  /** @Immutable entity on a subselect: managed, but excluded from dirty checking by mapping. */
     @Benchmark
     public List<BookView> immutableEntities(JpaState s) {
@@ -221,7 +221,7 @@ L'exemple suivant  montre comment avec la meme structure de code que dans le cas
 associes a un auteur en 1 seule requete et donc eviter le syndrome du **N+1** requetes.
 
 
-```
+``` java
 @Benchmark
     public int authorsWithBooksBatchSize(JpaState s) {
         try (EntityManager em = s.emNoL2()) {
